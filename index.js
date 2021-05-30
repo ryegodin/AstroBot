@@ -4,16 +4,21 @@ const Discord = require('discord.js');
 const Permissions = require('discord.js');
 const Canvas = require('canvas');
 const { prefix, token } = require('./config.json');
+const db = require("quick.db");
+//const { NovelCovid } = require("novelcovid");
+const track = require("novelcovid")
+
+
 
 const bot = new Discord.Client({ partials: ["MESSAGE", "CHANNEL", "REACTION"]});
 bot.commands = new Discord.Collection();
 
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+//const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
-for (const file of commandFiles) {
+/*for (const file of commandFiles) {
 	const command = require(`./commands/${file}`)
 	bot.commands.set(command.name, command);
-}
+}*/
 bot.once('ready', () => {
 	console.log('Ready!');
 	bot.users.fetch('220281067024809984').then((user) => {
@@ -22,58 +27,22 @@ bot.once('ready', () => {
 	});
 });
 
- const applyText = (canvas, text) => {
-	const ctx = canvas.getContext('2d');
-	let fontSize = 70;
-
-	do {
-		ctx.font = `${fontSize -= 10}px sans-serif`;
-	} while (ctx.measureText(text).width > canvas.width - 300);
-
-	return ctx.font;
-}; 
-
-
-bot.on('guildMemberAdd', (member, user) => {
-	console.log('User @' + member.user.tag + ' has joined the server!');
-	var role = member.guild.roles.cache.find(role => role.name == "Member")
-	member.roles.add(role);
-	guild.members.cache.get(user.id).roles.add("791481162459119636");
-});
-
-bot.on('guildMemberAdd', async member => {
+bot.on('guildMemberAdd', member => {
 	
-	const channel = member.guild.channels.cache.find(ch => ch.name === 'join-log');
-	if (!channel) return;
+	let role = member.guild.roles.cache.get("807097868468617216");
+	let second = member.guild.roles.cache.get("791481162459119636");
+	let third = member.guild.roles.cache.get("799868074702536704");
 
-	const canvas = Canvas.createCanvas(700, 250);
-	const ctx = canvas.getContext('2d');
-
-	const background = await Canvas.loadImage('./wallpaper.jpg');
-	ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
-
-	ctx.strokeStyle = '#74037b';
-	ctx.strokeRect(0, 0, canvas.width, canvas.height);
-		// Slightly smaller text placed above the member's display name
-	ctx.font = '28px sans-serif';
-	ctx.fillStyle = '#ffffff';
-	ctx.fillText('Welcome to the server,', canvas.width / 2.5, canvas.height / 3.5);
-		// Add an exclamation point here and below
-	ctx.font = applyText(canvas, `${member.displayName}!`);
-	ctx.fillStyle = '#ffffff';
-	ctx.fillText(`${member.displayName}!`, canvas.width / 2.5, canvas.height / 1.8);
-
-	ctx.beginPath();
-	ctx.arc(125, 125, 100, 0, Math.PI * 2, true);
-	ctx.closePath();
-	ctx.clip();
-	const avatar = await Canvas.loadImage(member.user.displayAvatarURL({ format: 'jpg' }));
-	ctx.drawImage(avatar, 25, 25, 200, 200);
-
-	const attachment = new Discord.MessageAttachment(canvas.toBuffer(), 'welcome-image.png');
-
-	channel.send(`Welcome to the server, ${member}!`, attachment);
-}); 
+	if (member.roles.cache.find(r => r.name !== "New")) {
+			member.roles.add(role);
+	}
+	if (member.roles.cache.find(r => r.name !== "⁣	 	 	 	NOTIFICATIONS")) {
+        	member.roles.add(second);
+    }
+	if (member.roles.cache.find(r => r.name !== "Member")) {
+        	member.roles.add(third);
+    }
+});
 
 
 bot.on('message' , async message => {
@@ -89,7 +58,115 @@ bot.on('message' , async message => {
 		message.channel.send('Reminder!');
 	}
 
-if (command === 'astromajor') {
+
+if(command === "covid") {
+     if(!args.length) {
+      return message.channel.send("Please give the name of country")
+    }
+  
+  if(args.join(" ") === "all") {
+      let corona = await track.all() //it will give global cases
+      
+      let embed = new Discord.MessageEmbed()
+      .setTitle("Global Cases")
+      .setColor("#ff0000")
+      .setDescription("Some case numbers may differ slightly.")
+      .addField("Total Cases", corona.cases, true)
+      .addField("Total Deaths", corona.deaths, true)
+      .addField("Total Recovered", corona.recovered, true)
+      .addField("Today's Cases", corona.todayCases, true)
+      .addField("Today's Deaths", corona.todayDeaths, true)
+      .addField("Active Cases", corona.active, true);
+      
+      return message.channel.send(embed)
+    } else {
+      let corona = await track.countries({ country: args.join(' ')}) //change it to countries
+      
+      let embed = new Discord.MessageEmbed()
+      .setTitle(`${corona.country}`)
+      .setColor("#ff0000")
+      .setDescription("Some case numbers may differ slightly.")
+      .addField("Total Cases", corona.cases, true)
+      .addField("Total Deaths", corona.deaths, true)
+      .addField("Total Recovered", corona.recovered, true)
+      .addField("Today's Cases", corona.todayCases, true)
+      .addField("Today's Deaths", corona.todayDeaths, true)
+      .addField("Active Cases", corona.active, true);
+      
+      return message.channel.send(embed);
+      
+      
+    }
+
+    
+} else if (command === "bad") { //Punish someone with a warning
+    if(!message.member.hasPermission("ADMINISTRATOR")) {
+      return message.channel.send("You do not have Mod Squad rank... ")
+    }
+    
+    const user = message.mentions.members.first()
+    
+     if(!user) {
+      return message.channel.send("Please Mention the person to who you want to warn - !bad @mention <reason>")
+     }
+   	if(message.mentions.users.first().bot) {
+      return message.channel.send("You can not warn my homies {aka. bots}")
+    }
+ 	if(message.author.id === user.id) {
+      return message.channel.send("Why are you trying to warn yourself?")
+    }
+    const reason = args.slice(1).join(" ")
+
+      if(!reason) {
+          return message.channel.send("Please provide reason to warn - !bad @mention <reason>")
+        }
+	let warnings = db.get(`warnings_${message.guild.id}_${user.id}`) //Creating warn in quick.db
+
+     if(warnings === null) {
+          db.set(`warnings_${message.guild.id}_${user.id}`, 1)
+          user.send(`You have been warned in **${message.guild.name}** for ${reason}`)
+          await message.channel.send(`You warned **${message.mentions.users.first().username}** for ${reason}`)
+        } else if(warnings !== null) {
+        db.add(`warnings_${message.guild.id}_${user.id}`, 1)
+       user.send(`You have been warned in **${message.guild.name}** for ${reason}`)
+      await message.channel.send(`You warned **${message.mentions.users.first().username}** for ${reason}`) 
+    }
+    
+} else if (command === "violations") { //How many violations does user have?
+    const user = message.mentions.members.first() || message.author
+	let warnings = db.get(`warnings_${message.guild.id}_${user.id}`)
+	if (warnings === null) warnings = 0;
+	message.channel.send(`${user} has **${warnings}** warning(s)`)
+
+} else if (command === "resetbad") { //Resets punishments.
+        if(!message.member.hasPermission("ADMINISTRATOR")) {
+      return message.channel.send("You are not a Mod Squad member, try again next year <3")
+    }
+    
+    const user = message.mentions.members.first()
+    
+    if(!user) {
+    return message.channel.send("Please mention a user - !resetbad @mention")
+    }
+    
+    if(message.mentions.users.first().bot) {
+      return message.channel.send("Bot are not allowed to have warnings")
+    }
+ 	if(message.author.id === user.id) {
+      return message.channel.send("You are not allowed to reset your warnings")
+    }
+    
+    let warnings = db.get(`warnings_${message.guild.id}_${user.id}`)
+
+	if(warnings === null) {
+      return message.channel.send(`**${message.mentions.users.first().username}** has no warnings`)
+    }
+     db.delete(`warnings_${message.guild.id}_${user.id}`)
+        user.send(`Your warnings were reset by ${message.author.username} from ${message.guild.name}`)
+        await message.channel.send(`All warnings of **${message.mentions.users.first().username}** have been cleared.`)
+    
+    
+} else if (command === 'astromajor') {
 	let embed = new Discord.MessageEmbed()
 	.setTitle('Are you an Astronomy and Physics Major?')
 	.setDescription('React below to recieve a special access to specific chats.')
@@ -99,24 +176,78 @@ if (command === 'astromajor') {
 	msgEmbed.react('🔭')
 
 
+} else if (command === 'rps') {
+	var art = message.content.slice(prefix.length).trim().split(' '); //Pull Arg from msg
+	var ai = Math.floor(Math.random() * 3); // 0-2 (0,1,2)
+	var choice = art[1]
+	//Change user input to UNICODE
+	if (choice === "r" || choice === "rock" || choice === "Rock") {
+		choice = "🌑"
+	} else if (choice === "p" || choice === "paper" || choice === "Paper") {
+		choice = "📰"
+	} else if (choice === "s" || choice === "scissors" || choice === "Scissors") {
+		choice = "✂️"
+	} else {
+		return message.channel.send("Please use !rps r, p or s. (ex. !rps r)") //Return if false
+	}
+	//Change AI to UNICODE
+		if (ai === 0) { 
+			ai = "🌑";
+		} else if (ai === 1) {
+			ai = "📰";
+		} else if (ai === 2) {
+			ai = "✂️";
+		} 
+	
+	 if (choice == "🌑" && ai == "🌑") { //Check to see who winner is
+		var fate = "Tie";
+	} else if (choice == "🌑" && ai == "📰") {
+		var fate = "You lost!";
+	} else if (choice == "🌑" && ai == "✂️") {
+		var fate = "Winner!";
+	} else if (choice == "📰" && ai == "🌑") {
+		var fate = "Winner!";
+	} else if (choice == "📰" && ai == "✂️") {
+		var fate = "You lost!";
+	} else if (choice == "📰" && ai == "📰") {
+		var fate = "Tie";
+	} else if (choice == "✂️" && ai == "✂️") {
+		var fate = "Tie"
+	} else if (choice == "✂️" && ai == "📰") {
+		var fate = "You won!"
+	} else if (choice == "✂️" && ai == "🌑") {
+		var fate = "You lost!"
+	}
+	const user = message.mentions.users.first() || message.author ;
+	let embed = new Discord.MessageEmbed()
+	.setTitle('AstroBot 🌑📰✂️')
+	.addField(`${user.username}:`, `${choice}`)
+	.addField('AstroBot:', `${ai}`)
+	.addField('Results:', `${fate}`)
+	.setColor(0xFF0000)
+	.setThumbnail('https://imgur.com/BWbS1Dx.png')
+
+	message.channel.send(embed);
+
+
 } else if (command === 'reminders') {
 	let embed = new Discord.MessageEmbed()
 	.setTitle('React to recieve Notifications')
 	.setDescription('Are you interested in recieving notifications for specific classes? The #reminders channel will send messages and ping you regarding upcoming assignment & deadlines.')
-	.addField('Introduction to Astronomy', '(PHYS 175) | 🌌')
-	.addField('Chemistry 2', '(CHEM 123) | 🧪')
-	.addField('Calculus 2', '(MATH 128) | 📝')
-	.addField('Modern Physics', '(PHYS 124) | 🚀')
-	.addField('Waves, Electricity, Magnets', '(PHYS 122) | 🧲')
+	.addField('Quantum Mechanics 1', '(PHYS 234) | 🧘')
+	.addField('Computer Science Intro 1', '(CS 115) | 💻')
+	.addField('Differential Equations', '(MATH 228) | 📝')
+	//.addField('Modern Physics', '(PHYS 124) | 🚀')
+	//.addField('Waves, Electricity, Magnets', '(PHYS 122) | 🧲')
 	.addField('General Waterloo Notifications', 'Info and Important Dates | 📢')
 	.setColor(0xFF0000)
 	.setThumbnail('https://imgur.com/H0XrMkP.jpg')
 	let msgEmbed = await message.channel.send(embed)
-	msgEmbed.react('🌌')
-	msgEmbed.react('🧪')
+	msgEmbed.react('🧘')
+	msgEmbed.react('💻')
 	msgEmbed.react('📝')
-	msgEmbed.react('🚀')
-	msgEmbed.react('🧲')
+	//msgEmbed.react('🚀')
+	//msgEmbed.react('🧲')
 	msgEmbed.react('📢')
 
 } else if (command === 'gender') {
@@ -189,6 +320,7 @@ if (command === 'astromajor') {
 	.addField('Rule #1' , 'Treat everyone with respect. Absolutely no harassment, witch hunting, sexism, racism, or hate speech will be tolerated.')
 	.addField('Rule #2' , 'No NSFW or obscene content. This includes text, images, or links featuring nudity, sex, hard violence, or other graphically disturbing content.')
 	.addField('Rule #3' , 'Do not break policy 71. Please run \"!71\" through chat for more information. If you\'re unsure if something is a violation of policy 71 please ask a Mod before sending')
+	.addField('Rule #3.1' , 'This includes images of answers or any written or typed final solution (incorrect or not) for any graded component of a course.')
 	.addField('Rule #4' , 'Respect all members of this community regardless of their program, grades or path to achieve their degree.')	
 	.addField('Rule #5' , 'No saying \"biggie milky dommy mommy demon succubus gf\" @Zaki...')
 	.addField('Rule #6' , 'Have fun!')
@@ -331,7 +463,14 @@ if (command === 'astromajor') {
 } else if (command === 'wtf') {
 		// send back "Pong." to the channel the message was sent in
 		message.channel.send('**Sorry, what the fuck did you just say?**');
-} else if (command === '!help') {
+} else if (command === "bread") {
+    	bot.users.fetch('220281067024809984').then((user) => {
+			user.send("You have been pinged on AstroSquad")
+		});
+		message.channel.send("I sent him a message, he wont be happy with the ping, be warned.")
+} else if (command === 'jason') {
+ 	message.channel.send(`I am questioning if the instructors are not so familiar with piazza. If I were an instructor in this course I would've made a pinned post, and requested that people post their introduction below in the "follow-up discussion" (like as comments). Am I supposed to list my major? I don't know yet. I'm just snatching up whatever course credits I can. I think I'm generally aiming for at least a physics minor and a CS minor. Well, I'm in the science faculty. I don't know what else to say in intros without making things weird so I'm just gonna end it here.`);
+ } else if (command === '!help') {
 		message.channel.send('We got! !daily, !sus, !wtf, !ping, !pong, !fpg, !me, !no, !ranking, !, !71, !gn, !sarahk, !sad, !137, !incel, !nevada, !wtfnavy, !logic, !glory, !detroit, !sex and some easter eggs. If you can find them');
 } else if (command === '') {
 		message.channel.send('The Developer of this Top Tier Bot is Ryein Godin. He worked hard and is superior than most normal humans. If you have any suggestions for the bot. Let me know and I will try my best to copy and paste off GitHub! Thanks bye.');
@@ -397,6 +536,9 @@ if (command === 'astromajor') {
 	return message.reply('Done.')
 }*/
 
+})
+
+
 bot.on("messageReactionAdd", async (reaction, user) => {
 	if (reaction.message.partial) await reaction.message.fetch();
 	if (reaction.partial) await reaction.fetch();
@@ -404,18 +546,18 @@ bot.on("messageReactionAdd", async (reaction, user) => {
 	if (user.bot) return;
 	if (!reaction.message.guild) return;
 	if (reaction.message.channel.id === "752947541703917619") {
-		if (reaction.emoji.name === '🔭') {
-			await reaction.message.guild.members.cache.get(user.id).roles.add("799876477704994836")
-		} else if (reaction.emoji.name === '🌌') {
+		if (reaction.emoji.name === '🧘') {
+			await reaction.message.guild.members.cache.get(user.id).roles.add("836794887256932352")
+		} else if (reaction.emoji.name === '💻') {
 			await reaction.message.guild.members.cache.get(user.id).roles.add("791481750810394656")
-		} else if (reaction.emoji.name === '🧪') {
-			await reaction.message.guild.members.cache.get(user.id).roles.add("791481866099490836")
 		} else if (reaction.emoji.name === '📝') {
+			await reaction.message.guild.members.cache.get(user.id).roles.add("791481814848897044")
+		/*} else if (reaction.emoji.name === '📝') {
 			await reaction.message.guild.members.cache.get(user.id).roles.add("791481814848897044")
 		} else if (reaction.emoji.name === '🚀') {
 			await reaction.message.guild.members.cache.get(user.id).roles.add("791482040637325342")
 		} else if (reaction.emoji.name === '🧲') {
-			await reaction.message.guild.members.cache.get(user.id).roles.add("791481957850677278")
+			await reaction.message.guild.members.cache.get(user.id).roles.add("791481957850677278")*/
 		} else if (reaction.emoji.name === '📢') {
 			await reaction.message.guild.members.cache.get(user.id).roles.add("800549604802035743")
 		} else if (reaction.emoji.name === '🔵') {
@@ -439,18 +581,18 @@ bot.on("messageReactionRemove", async (reaction, user) => {
 	if (user.bot) return;
 	if (!reaction.message.guild) return;
 	if (reaction.message.channel.id === "752947541703917619") {
-		if (reaction.emoji.name === '🔭') {
-			await reaction.message.guild.members.cache.get(user.id).roles.remove("799876477704994836")
-		} else if (reaction.emoji.name === '🌌') {
+		if (reaction.emoji.name === '🧘') {
+			await reaction.message.guild.members.cache.get(user.id).roles.remove("836794887256932352")
+		} else if (reaction.emoji.name === '💻') {
 			await reaction.message.guild.members.cache.get(user.id).roles.remove("791481750810394656")
-		} else if (reaction.emoji.name === '🧪') {
-			await reaction.message.guild.members.cache.get(user.id).roles.remove("791481866099490836")
 		} else if (reaction.emoji.name === '📝') {
+			await reaction.message.guild.members.cache.get(user.id).roles.remove("791481814848897044")
+		/*} else if (reaction.emoji.name === '📝') {
 			await reaction.message.guild.members.cache.get(user.id).roles.remove("791481814848897044")
 		} else if (reaction.emoji.name === '🚀') {
 			await reaction.message.guild.members.cache.get(user.id).roles.remove("791482040637325342")
 		} else if (reaction.emoji.name === '🧲') {
-			await reaction.message.guild.members.cache.get(user.id).roles.remove("791481957850677278")
+			await reaction.message.guild.members.cache.get(user.id).roles.remove("791481957850677278")*/
 		} else if (reaction.emoji.name === '📢') {
 			await reaction.message.guild.members.cache.get(user.id).roles.remove("800549604802035743")
 		} else if (reaction.emoji.name === '🔵') {
@@ -467,15 +609,15 @@ bot.on("messageReactionRemove", async (reaction, user) => {
 	}
 })
 
-if (!bot.commands.has(command)) return;
+/*if (!bot.commands.has(command)) return;
 	try {
 		bot.commands.get(command).execute(message, args);
 		} catch (error) { 
 		console.error(error);
 		message.reply('someone had an oopsie! Didnt work...');
 	}
+*/
 
-});
 
 bot.on("ready", () =>{
     console.log(`AstroBot is ready to fuck shit up!`);
