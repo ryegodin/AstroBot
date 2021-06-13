@@ -453,6 +453,8 @@ if(command === "covid") {
 	return message.reply('thanks, the Organic Chemistry Teacher.');
 
 
+} else if (command === 'imperial') {
+    	message.channel.send('Id just like to mention that this is the first time in my canadian life that Ive ever been forced to work with pounds for a school assignment, and I disagree that this would ever be useful to me in any way. If I had to work with someone who uses imperial units I would simply not work with them :))))');
 } else if (command ==='daily') {
 		message.channel.send('**Daily Reminder**: Fuck: Chem, Labs (not Sue, cause we love Sue), MOBIUS fucking MOBIUS...,  the Ranking System, MATH114 in general, SPCOM stupid ass discussion posts, Saf and his cheating ass, MasteringPhysics and its greed for money...');
 	
