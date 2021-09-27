@@ -12,6 +12,7 @@
   "dependencies": {
     "canvas": "^2.6.1",
     "discord.js": "^12.4.0",
+    "mathjs": "^9.4.4",
     "node-schedule": "^2.0.0",
     "novelcovid": "^3.0.0",
     "quick.db": "^7.1.3"
