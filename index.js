@@ -103,7 +103,7 @@ bot.on('message' , async message => {
 	} else if (command === "apod") {
 		
 		let getAPOD = async () => {
-        		let response = await axios.get('https://api.nasa.gov/planetary/apod?api_key=cbhzuzxQAI6AYnhEe4E8pj3j6N792NUVBkJS4aqo')
+        		let response = await axios.get('https://api.nasa.gov/planetary/apod?api_key=(API-KEY')
         		let APOD = response.data
         		return APOD
    		 }
