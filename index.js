@@ -8,6 +8,7 @@ const db = require("quick.db"); //Database for storing information.
 const track = require("novelcovid") //Novel COVID-19 API
 const { create, all } = require('mathjs') // Differential Equation MATH Functions
 const math = create(all) // Math functions require
+const axios = require('axios') // Axios API fetch
 
 
 
@@ -97,7 +98,32 @@ bot.on('message' , async message => {
 
 
 	    }
-
+	
+	// NASA APOD (REST API) using AXIOS alternative
+	} else if (command === "apod") {
+		
+		let getAPOD = async () => {
+        		let response = await axios.get('https://api.nasa.gov/planetary/apod?api_key=cbhzuzxQAI6AYnhEe4E8pj3j6N792NUVBkJS4aqo')
+        		let APOD = response.data
+        		return APOD
+   		 }
+		
+    		let apodValue = await getAPOD();
+    		let title = apodValue.title;
+    		let date = apodValue.date;
+   		let explanation = apodValue.explanation
+    		let copyright = apodValue.copyright
+    		let hdurl = apodValue.hdurl
+    
+    		let embed = new Discord.MessageEmbed()
+    		.setTitle(`${title} | ${date}`)
+    		.setDescription(`${explanation}`)
+    		.setColor("#ff0000")
+   		.addField("Credits", copyright)
+    		.setImage(`${hdurl}`)
+    
+    		return message.channel.send(embed)
+		
 	//QUICK.DB Database Storage for Punishments
 	} else if (command === "bad") { //Punish someone with a warning
 	    if(!message.member.hasPermission("ADMINISTRATOR")) {
